@@ -1,0 +1,16 @@
+{
+  "name": "kem-local-player",
+  "version": "1.0.0",
+  "author": "kino",
+  "type": "module",
+  "description": "播放本地文件夹中的音乐，显示同步歌词并注册托盘控制。",
+  "files": ["host.mjs", "player.html"],
+  "kem": {
+    "id": "local-player",
+    "apiVersion": 1,
+    "host": "./host.mjs",
+    "client": { "entry": "./player.html", "label": "本地播放器" },
+    "title": "本地播放器",
+    "description": "播放本地文件夹中的音乐，显示同步歌词并注册托盘控制。"
+  }
+}

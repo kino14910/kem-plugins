@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
-const archive = new URL("../dist/registry/-/tarballs/kem-local-player-1.0.0.tgz", import.meta.url);
+const archive = new URL("../dist/registry/-/tarballs/kem-local-player-1.1.0.tgz", import.meta.url);
 const html = execFileSync("tar", ["-xOf", fileURLToPath(archive), "package/player.html"], { encoding: "utf8" });
 const test = await readFile(new URL("./local-player.browser.js", import.meta.url), "utf8");
 const output = new URL("../.cache/local-player-browser.js", import.meta.url);

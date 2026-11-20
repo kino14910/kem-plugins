@@ -13,7 +13,8 @@ async (page, html, folderPath) => {
       const { port1, port2 } = new MessageChannel();
       port1.onmessage = ({ data }) => window.messages.push(data);
       window.send = (id) => port1.postMessage({ type: 'action', id });
-      frame.contentWindow.postMessage({ type: 'kem:init' }, '*', [port2]);
+      window.barAction = (id, value) => port1.postMessage({ type: 'bottom-bar-action', id, value });
+      frame.contentWindow.postMessage({ type: 'kem:init', capabilities: { bottomBar: 1 } }, '*', [port2]);
     }, { once: true });
   }, html);
   const menu = (id, label, enabled = true) => page.waitForFunction(({ id, label, enabled }) => {
@@ -33,9 +34,13 @@ async (page, html, folderPath) => {
   check(await frame.locator('#audio').evaluate((audio) => audio.paused && audio.src.startsWith('blob:')),
     'Folder selection should select, but not play, a local blob');
 
-  await frame.locator('#volume').fill('0.37');
+  check(await frame.locator('#inline-controls').isHidden(), 'Controls must move to the host bar');
+  await page.waitForFunction(() => window.messages.findLast(m => m.type === 'bottom-bar')?.bar?.text === 'Song.wav');
+  await page.evaluate(() => window.barAction('volume', 37));
+  await page.waitForFunction(() => window.messages.findLast(m => m.type === 'bottom-bar')?.bar?.controls
+    .some(control => control.id === 'volume' && control.value === 37));
   check(await frame.locator('#audio').evaluate((audio) => audio.volume) === 0.37, 'Volume failed');
-  await frame.locator('#play').click();
+  await page.evaluate(() => window.barAction('play'));
   await menu('play', '暂停');
   await page.evaluate(() => window.send('play'));
   await menu('play', '播放');
@@ -48,7 +53,7 @@ async (page, html, folderPath) => {
   await page.evaluate(() => { document.querySelector('#panel').hidden = true; window.send('play'); });
   await menu('play', '暂停');
   await caption('另一目录'); // The hidden player reached the end and advanced itself.
-  await page.evaluate(() => window.send('next'));
+  await page.evaluate(() => window.barAction('next'));
   await caption('Song.wav'); // Wrap to the first track.
   await page.evaluate(() => window.send('lyrics'));
   await caption(null);
@@ -65,6 +70,7 @@ async (page, html, folderPath) => {
   });
   await page.waitForFunction(() => window.messages.findLast((message) => message.type === 'menu')?.items.length === 0);
   await caption(null);
+  await page.waitForFunction(() => window.messages.findLast(m => m.type === 'bottom-bar')?.bar === null);
   check(await frame.locator('#audio').evaluate((audio) => audio.paused && !audio.hasAttribute('src') &&
     window.revoked.length === 1), 'Pagehide should release the current audio and object URL');
   return 'Sandboxed blob playback, volume, LRC pairing and timing, tray actions, hidden advance and cleanup passed';

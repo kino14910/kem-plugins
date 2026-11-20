@@ -44,12 +44,14 @@ test("the local player npm archive contains the declared client and API v1 host"
   assert.ok(player.versions.some(({ version }) => version === "1.0.0"));
 
   const packument = await readJson(new URL(`registry/${player.name}`, dist));
-  const archive = fileURLToPath(new URL(`registry/-/tarballs/${player.name}-1.0.0.tgz`, dist));
+  const latest = player.versions[0].version;
+  assert.equal(latest, "1.1.0");
+  const archive = fileURLToPath(new URL(`registry/-/tarballs/${player.name}-${latest}.tgz`, dist));
   const readMember = (path) => execFileSync("tar", ["-xOf", archive, `package/${path}`], { encoding: "utf8" });
   const manifest = JSON.parse(readMember("package.json"));
   assert.equal(manifest.author, "kino");
-  assert.equal(manifest.version, "1.0.0");
-  assert.deepEqual(manifest.kem, packument.versions["1.0.0"].kem);
+  assert.equal(manifest.version, latest);
+  assert.deepEqual(manifest.kem, packument.versions[latest].kem);
   assert.deepEqual(manifest.kem.client, { entry: "./player.html", label: "本地播放器" });
   const host = readMember(manifest.kem.host.slice(2));
   const plugin = await import(`data:text/javascript,${encodeURIComponent(host)}`);

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KEM 插件市场</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { margin: 0; font: 1rem/1.6 system-ui, sans-serif; }
+    main { max-width: 44rem; margin: 3rem auto; padding-inline: 1.25rem; }
+    h1, h2, h3 { line-height: 1.25; }
+    label { display: block; margin-bottom: .25rem; }
+    .source { display: flex; flex-wrap: wrap; gap: .5rem; }
+    input, button { font: inherit; padding: .4rem .65rem; }
+    input { flex: 1 1 15rem; min-width: 0; }
+    #copy-status { min-height: 1.6em; margin-top: .25rem; }
+    #plugins { padding: 0; list-style: none; }
+    #plugins li { border-top: 1px solid GrayText; padding: 1rem 0; overflow-wrap: anywhere; }
+    #plugins h3, #plugins p { margin: 0 0 .35rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>KEM 插件市场</h1>
+    <p>将索引地址添加到 KEM 的「运行时 → 发现」。</p>
+    <label for="source-url">市场索引地址</label>
+    <div class="source">
+      <input id="source-url" type="url" readonly>
+      <button id="copy-source" type="button" disabled>复制索引地址</button>
+    </div>
+    <p id="copy-status" role="status"></p>
+    <p><a href="./index.json">查看 index.json</a></p>
+    <section aria-labelledby="plugins-heading">
+      <h2 id="plugins-heading">插件</h2>
+      <p id="catalog-status" role="status"></p>
+      <ul id="plugins"></ul>
+    </section>
+    <noscript>启用 JavaScript 可在此页查看插件列表。</noscript>
+  </main>
+  <script type="module">
+    const indexUrl = new URL('./index.json', location.href);
+    const source = document.getElementById('source-url');
+    const copy = document.getElementById('copy-source');
+    const copyStatus = document.getElementById('copy-status');
+    source.value = indexUrl.href;
+    copy.disabled = false;
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(source.value);
+        copyStatus.textContent = '已复制索引地址。';
+      } catch {
+        source.focus();
+        source.select();
+        copyStatus.textContent = '请手动复制选中的索引地址。';
+      }
+    });
+
+    const catalogStatus = document.getElementById('catalog-status');
+    catalogStatus.textContent = '正在加载插件目录…';
+    try {
+      const response = await fetch(indexUrl);
+      if (!response.ok) throw new Error('Index request failed');
+      const index = await response.json();
+      if (index.format !== 1 || !Array.isArray(index.items)) throw new Error('Invalid index');
+
+      const list = document.createDocumentFragment();
+      for (const item of index.items) {
+        const row = document.createElement('li');
+        const name = document.createElement('h3');
+        const description = document.createElement('p');
+        const version = document.createElement('code');
+        name.textContent = item.title;
+        description.textContent = item.description;
+        // The generated index lists the latest release first.
+        version.textContent = `${item.name}@${item.versions[0].version}`;
+        row.append(name, description, '最新版本 ', version);
+        list.append(row);
+      }
+      document.getElementById('plugins').append(list);
+      catalogStatus.textContent = index.items.length ? '' : '目录暂无插件。';
+      catalogStatus.hidden = index.items.length > 0;
+    } catch {
+      catalogStatus.textContent = '无法加载插件目录，请稍后重试。';
+    }
+  </script>
+</body>
+</html>

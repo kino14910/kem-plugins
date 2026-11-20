@@ -1,0 +1,14 @@
+{
+  "name": "kem-market-hello",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A small KEM Host plugin that logs activation and deactivation.",
+  "files": ["host.mjs"],
+  "kem": {
+    "id": "market-hello",
+    "apiVersion": 1,
+    "host": "./host.mjs",
+    "title": "Market Hello",
+    "description": "在 Host 日志中记录插件的启用和停用。"
+  }
+}
